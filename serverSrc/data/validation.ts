@@ -37,7 +37,7 @@ export const MovieArraySchema = z.array(z.union([MovieSchema, ReviewSchema]));
 
 export function isMovie(item: Movie | Review): item is Movie {
 	try {
-		let result = MovieSchema.parse(item)
+		MovieSchema.parse(item)
 		return true
 	} catch {
 		return false
@@ -46,7 +46,7 @@ export function isMovie(item: Movie | Review): item is Movie {
 
 export function isReview(item: Movie | Review): item is Review {
 	try {
-		let result = ReviewSchema.parse(item)
+		ReviewSchema.parse(item)
 		return true
 	} catch {
 		return false

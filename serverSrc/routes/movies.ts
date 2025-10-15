@@ -1,18 +1,21 @@
 import express from 'express';
-import type { Express, Request, RequestHandler, Response, Router } from 'express';
+import type { Request, Response, Router } from 'express';
 import { DynamoDBClient, ScanCommand } from '@aws-sdk/client-dynamodb';
-import { DeleteCommand, DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand, UpdateCommand, type PutCommandOutput } from '@aws-sdk/lib-dynamodb';
+import { DeleteCommand, DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import type { DynamoMovie, ErrorMessage } from '../data/types.js';
-import * as z from "zod";
-import { moviePostSchema, MovieSchema, ReviewSchema, MovieArraySchema, isMovie, isReview } from '../data/validation.js';
+
+import { moviePostSchema, ReviewSchema, MovieArraySchema, isReview } from '../data/validation.js';
 import type { Movie, Review } from '../data/validation.js';
 
 
 
 
 const router: Router = express.Router();
-const accessKey: string = process.env.ACCESS_KEY || '';
-const secretAccessKey: string = process.env.SECRET_ACCESS_KEY || '';
+const accessKey: string = process.env.AWS_ACCESS_KEY_ID || '';
+const secretAccessKey: string = process.env.AWS_SECRET_ACCESS_KEY || '';
+
+console.log('AWS_ACCESS_KEY_ID:', accessKey ? `${accessKey.slice(0, 4)}...${accessKey.slice(-4)}` : 'MISSING');
+console.log('AWS_SECRET_ACCESS_KEY:', secretAccessKey ? `${secretAccessKey.slice(0, 4)}...${secretAccessKey.slice(-4)}` : 'MISSING');
 
 export type GetResult = Record<string, any> | undefined
 
@@ -55,31 +58,36 @@ router.get('/:movieId', async (req: Request<MovieIdParam>, res: Response<Movie |
 })
 
 
-type ScanResult = Array<Movie | undefined | ErrorMessage>;
+//type ScanResult = Array<Movie | undefined | ErrorMessage>;
 
-router.get('/', async(req: Request<MovieIdParam>, res: Response<Movie[] | ErrorMessage>) => {
+router.get('/', async(_req: Request, res: Response<Movie[] | ErrorMessage>) => {
 	let scanCommand = new ScanCommand({
 		TableName: myTable
 	})
-	const result = await db.send(scanCommand);
-	const items: DynamoMovie[] = (result.Items ?? []) as DynamoMovie[];
+	try {
+		const result = await db.send(scanCommand);
+		const items: DynamoMovie[] = (result.Items ?? []) as DynamoMovie[];
 
-console.log('Data from DynamoDB:', items);
+		console.log('Data from DynamoDB:', items);
 
-  const moviesOnly = items
-	.filter(item => item.reviewId.S === 'meta')
-	.map(item => ({
-	  movieId: item.movieId.S,
-	  title: item.title?.S ?? '',
-	  director: item.director?.S ?? '',
-	  img: item.img?.S ?? '',
-	  reviewId: "meta" as const,
-	  year: item.year?.N ? Number(item.year.N) : 0
-	}));
-	if (moviesOnly && moviesOnly.length > 0)
-		res.send(moviesOnly);
-	else
-		res.status(404).send({ error: 'No movies found' });
+		const moviesOnly = items
+			.filter(item => item.reviewId.S === 'meta')
+			.map(item => ({
+				movieId: item.movieId.S,
+				title: item.title?.S ?? '',
+				director: item.director?.S ?? '',
+				img: item.img?.S ?? '',
+				reviewId: "meta" as const,
+				year: item.year?.N ? Number(item.year.N) : 0
+			}));
+		if (moviesOnly && moviesOnly.length > 0)
+			res.send(moviesOnly);
+		else
+			res.status(404).send({ error: 'No movies found' });
+	} catch (error) {
+		console.log('DynamoDB error:', error);
+		res.status(500).send({ error: 'Database connection failed' });
+	}
 });
 
 /*
@@ -112,7 +120,7 @@ router.post('/:movieId', async (req: Request, res: Response<Movie | ErrorMessage
 		img,
 		year
 	};
-	const postResult: PutCommandOutput = await db.send(new PutCommand({
+	await db.send(new PutCommand({
 		TableName: myTable,
 		Item: newItem
 	}));
@@ -192,7 +200,7 @@ router.get('/:movieId/reviews', async (req: Request<MovieIdParam>, res: Response
 
 	try {
 		let items = MovieArraySchema.parse(result.Items)
-		const filtered: Review[] = items.filter(isReview) 
+		const filtered: Review[] = items.filter(isReview) as Review[]
 		res.send(filtered)
 	} catch (error) {
 		console.log('/movies/:id/reviews  - parse error: ', (error as Error).message)
@@ -239,7 +247,7 @@ router.get('/:movieId/reviews', async (req: Request<MovieIdParam>, res: Response
 		name
 	}
 	try {
-		let result: PutCommandOutput = await db.send(new PutCommand({
+		await db.send(new PutCommand({
 			TableName: myTable,
 			Item: newItem
 		}))

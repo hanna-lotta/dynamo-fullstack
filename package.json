@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
 	"build-server": "tsc -p ./serverSrc/tsconfig.json",
-    "start-server": "node --env-file .env ./serverDist/data/server.js",
+    "start-server": "node --env-file .env ./serverDist/server.js",
     "lint": "eslint .",
     "preview": "vite preview"
   },

@@ -1,12 +1,12 @@
 import express from 'express';
-import type { Express, Request, RequestHandler, Response } from 'express';
+import type { Express, RequestHandler } from 'express';
 import movieRouter from './routes/movies.js';
 import cors from 'cors';
 
 const port = Number(process.env.PORT) || 1688;
 const app: Express = express();
 
-const logger: RequestHandler = (req, res, next) => {
+const logger: RequestHandler = (req, _res, next) => {
   console.log(`Request received: ${req.method} ${req.url}`);  //lägg till body vid post/put
   next();
 };
