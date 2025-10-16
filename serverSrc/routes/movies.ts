@@ -127,14 +127,6 @@ router.post('/:movieId', async (req: Request, res: Response<Movie | ErrorMessage
 	res.status(201).send(newItem);
 });
 
-/*
-router.post('/:movieId', async (req: Request, res: Response<Movie>) => {
-	let newItem: Movie = { movieId: 'movie6', reviewId: 'meta', title: 'The Matrix Reloaded', director: 'Lana Wachowski - Lilly Wachowski', year: 2003, img: 'https://i.pinimg.com/736x/01/fd/98/01fd9847e3bf83bc01f7f59ff2ee50ca.jpg'}
-	let postResult: PutCommandOutput = await db.send(new PutCommand({
-		TableName: myTable,
-		Item: newItem
-	}));*/
-
 
 
 // Delete route

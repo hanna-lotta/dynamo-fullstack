@@ -6,3 +6,9 @@ export type Movie = {
 	reviewId: string;
 	year: number;
 }
+export type Review = {
+	movieId: string;
+	reviewId: string;
+	rating: number;
+	name: string;
+}
